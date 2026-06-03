@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 
 # -------------------------------
-# 1. DATASET (INSIDE CODE)
+# 1. DEFINE DATASET (IMPORTANT!)
 # -------------------------------
 data = [
     ['Sunny','Hot','High','Weak','No'],
@@ -23,15 +23,16 @@ data = [
 
 columns = ['Outlook','Temperature','Humidity','Wind','PlayTennis']
 
+# -------------------------------
+# 2. CREATE DATAFRAME
+# -------------------------------
 df = pd.DataFrame(data, columns=columns)
 
-print("Dataset:\n", df)
-
 # -------------------------------
-# 2. ENTROPY
+# 3. ENTROPY FUNCTION
 # -------------------------------
-def entropy(target):
-    values, counts = np.unique(target, return_counts=True)
+def entropy(target_col):
+    values, counts = np.unique(target_col, return_counts=True)
     ent = 0
     for i in range(len(values)):
         p = counts[i] / sum(counts)
@@ -39,52 +40,52 @@ def entropy(target):
     return ent
 
 # -------------------------------
-# 3. INFORMATION GAIN
+# 4. INFORMATION GAIN
 # -------------------------------
-def info_gain(df, attr):
-    total_entropy = entropy(df['PlayTennis'])
+def info_gain(df, attr, target="PlayTennis"):
+    total_entropy = entropy(df[target])
     values, counts = np.unique(df[attr], return_counts=True)
 
     weighted_entropy = 0
     for i in range(len(values)):
         subset = df[df[attr] == values[i]]
-        weighted_entropy += (counts[i] / sum(counts)) * entropy(subset['PlayTennis'])
+        weighted_entropy += (counts[i] / sum(counts)) * entropy(subset[target])
 
     return total_entropy - weighted_entropy
 
 # -------------------------------
-# 4. ID3 ALGORITHM
+# 5. ID3 ALGORITHM
 # -------------------------------
-def id3(df, attributes):
+def id3(df, attributes, target="PlayTennis"):
 
-    if len(np.unique(df['PlayTennis'])) == 1:
-        return df['PlayTennis'].iloc[0]
+    if len(np.unique(df[target])) == 1:
+        return df[target].iloc[0]
 
     if len(attributes) == 0:
-        return df['PlayTennis'].mode()[0]
+        return df[target].mode()[0]
 
-    gains = [info_gain(df, attr) for attr in attributes]
+    gains = [info_gain(df, attr, target) for attr in attributes]
     best_attr = attributes[np.argmax(gains)]
 
     tree = {best_attr: {}}
 
     for value in np.unique(df[best_attr]):
         subset = df[df[best_attr] == value]
-        subtree = id3(subset, [a for a in attributes if a != best_attr])
+        subtree = id3(subset, [a for a in attributes if a != best_attr], target)
         tree[best_attr][value] = subtree
 
     return tree
 
 # -------------------------------
-# 5. BUILD TREE
+# 6. BUILD TREE
 # -------------------------------
 attributes = columns[:-1]
 tree = id3(df, attributes)
 
-print("\nDecision Tree:\n", tree)
+print("Decision Tree:\n", tree)
 
 # -------------------------------
-# 6. PREDICTION
+# 7. PREDICTION FUNCTION
 # -------------------------------
 def predict(sample, tree):
     for root in tree:
@@ -97,7 +98,7 @@ def predict(sample, tree):
             return subtree
 
 # -------------------------------
-# 7. TEST SAMPLE
+# 8. TEST SAMPLE
 # -------------------------------
 sample = {
     'Outlook': 'Sunny',
